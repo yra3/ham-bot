@@ -65,7 +65,11 @@ def get_proxy_headers() -> Dict[str, str]:
 async def get_all_smart_json(token: str):
     verify_token(token)
     nodes = await get_current_nodes(only_alive=False)
-    configs = generate_happ_subscription_json(nodes, sub_domain=settings.SUB_DOMAIN)
+    configs = generate_happ_subscription_json(
+        nodes,
+        sub_domain=settings.SUB_DOMAIN,
+        direct_domains=settings.DIRECT_DOMAINS,
+    )
     return Response(
         content=json.dumps(configs, ensure_ascii=False, indent=2),
         media_type='application/json; charset=utf-8',
@@ -76,7 +80,11 @@ async def get_all_smart_json(token: str):
 async def get_verified_smart_json(token: str):
     verify_token(token)
     nodes = await get_current_nodes(only_alive=True)
-    configs = generate_happ_subscription_json(nodes, sub_domain=settings.SUB_DOMAIN)
+    configs = generate_happ_subscription_json(
+        nodes,
+        sub_domain=settings.SUB_DOMAIN,
+        direct_domains=settings.DIRECT_DOMAINS,
+    )
     return Response(
         content=json.dumps(configs, ensure_ascii=False, indent=2),
         media_type='application/json; charset=utf-8',

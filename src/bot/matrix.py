@@ -198,6 +198,10 @@ class MatrixBotService:
         body = text.strip()
         cmd = body.split()[0].lower() if body else ''
         is_admin = sender in settings.MATRIX_ADMIN_USERS
+        if is_admin:
+            from src.core import db
+            if not db.get_meta(f'matrix_dm:{sender}'):
+                db.set_meta(f'matrix_dm:{sender}', room_id)
 
         if cmd in ['!help', '!start', 'помощь', 'привет', 'старт', 'help']:
             msg = HELP_TEXT_USER.format(domain=settings.SUB_DOMAIN, token=settings.SUB_SECRET_TOKEN)

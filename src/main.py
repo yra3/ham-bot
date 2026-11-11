@@ -41,6 +41,18 @@ async def run_telegram():
     await bot.start()
 
 
+async def run_scheduler(fetcher: SubscriptionFetcher, checker: NodeHealthChecker):
+    while True:
+        await asyncio.sleep(3600)
+        try:
+            if not fetcher.is_cache_valid():
+                logger.info('Subscription cache expired; refreshing from upstream...')
+                await fetcher.fetch(force=False)
+                await sync_sidecar_xray_config(fetcher, checker, settings.REGION_WHITELIST)
+        except Exception as e:
+            logger.error(f'Background subscription refresh failed: {e}')
+
+
 async def main():
     logger.info('Initializing SQLite storage...')
     db.init_db()
@@ -51,13 +63,17 @@ async def main():
         cache_ttl_hours=settings.CACHE_TTL_HOURS,
     )
     checker = NodeHealthChecker(target_alive=settings.TARGET_ALIVE_NODES)
-    await sync_sidecar_xray_config(fetcher, checker, settings.REGION_WHITELIST)
+    try:
+        await sync_sidecar_xray_config(fetcher, checker, settings.REGION_WHITELIST)
+    except Exception as e:
+        logger.warning(f'Initial sidecar xray sync warning: {e}')
 
     logger.info('Starting ham-bot application...')
     tasks = [
         asyncio.create_task(run_web()),
         asyncio.create_task(run_matrix()),
         asyncio.create_task(run_telegram()),
+        asyncio.create_task(run_scheduler(fetcher, checker)),
     ]
     await asyncio.gather(*tasks)
 

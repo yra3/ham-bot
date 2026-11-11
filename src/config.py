@@ -11,6 +11,7 @@ class Settings(BaseSettings):
     CHECK_SCHEDULE_CRON: str = '0 1 * * *'
     TARGET_ALIVE_NODES: int = 5
     REGION_WHITELIST: List[str] = ['Финляндия', 'Нидерланды']
+    DIRECT_DOMAINS: List[str] = []
 
     # Subscription Domain & Endpoint
     SUB_DOMAIN: str = 'sub.example.com'

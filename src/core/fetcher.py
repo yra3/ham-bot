@@ -60,17 +60,39 @@ class SubscriptionFetcher:
             'X-Device-Model': 'Desktop-PC'
         }
 
-        async with httpx.AsyncClient(timeout=25.0) as client:
-            resp = await client.get(self.sub_url, headers=headers)
-            resp.raise_for_status()
+        try:
+            async with httpx.AsyncClient(timeout=25.0) as client:
+                resp = await client.get(self.sub_url, headers=headers)
+                resp.raise_for_status()
 
-            resp_headers_dict = dict(resp.headers)
-            with open(HEADERS_FILE, 'w', encoding='utf-8') as f:
-                for k, v in resp_headers_dict.items():
-                    f.write(k + ': ' + str(v) + chr(10))
+                data = resp.json()
+                if not isinstance(data, list) or not data:
+                    raise ValueError('Upstream returned empty or non-list payload')
 
-            data = resp.json()
-            with open(DATA_FILE, 'w', encoding='utf-8') as f:
-                json.dump(data, f, ensure_ascii=False, indent=2)
+                resp_headers_dict = dict(resp.headers)
+                with open(HEADERS_FILE, 'w', encoding='utf-8') as f:
+                    for k, v in resp_headers_dict.items():
+                        f.write(k + ': ' + str(v) + chr(10))
 
-            return data, resp_headers_dict
+                with open(DATA_FILE, 'w', encoding='utf-8') as f:
+                    json.dump(data, f, ensure_ascii=False, indent=2)
+
+                return data, resp_headers_dict
+        except Exception as e:
+            logger.error(f'Upstream subscription fetch failed: {e}')
+            try:
+                from src.core.notifier import notify_admins
+                await notify_admins(
+                    f'⚠️ <b>Ошибка обновления подписки с апстрима:</b>\n<code>{e}</code>',
+                    dedup_key='upstream_fetch_error',
+                    cooldown_seconds=0 if force else 3600,
+                )
+            except Exception as notify_err:
+                logger.warning(f'Failed to dispatch admin error notification: {notify_err}')
+
+            if not force:
+                stale = self.load_from_cache()
+                if stale:
+                    logger.warning('Serving stale cached subscription as fallback.')
+                    return stale, self.load_headers()
+            raise

@@ -100,6 +100,40 @@ def parse_upstream_json(raw_items: List[Dict[str, Any]], whitelist: Optional[Lis
         
     return nodes
 
-def sanitize_and_patch_config(item: Dict[str, Any], sub_domain: str = "") -> Dict[str, Any]:
-    # Keep the original upstream routing and config 1:1 without mutating domains
-    return copy.deepcopy(item)
+def _normalize_domain_rule(entry: str) -> str:
+    d = entry.strip()
+    if not d:
+        return ''
+    if ':' in d:
+        return d
+    if d.startswith('*.'):
+        d = d[2:]
+    return f'domain:{d}'
+
+
+def sanitize_and_patch_config(
+    item: Dict[str, Any],
+    sub_domain: str = '',
+    direct_domains: Optional[List[str]] = None,
+) -> Dict[str, Any]:
+    config = copy.deepcopy(item)
+    if not direct_domains:
+        return config
+
+    normalized: List[str] = []
+    for entry in direct_domains:
+        rule_dom = _normalize_domain_rule(entry)
+        if rule_dom and rule_dom not in normalized:
+            normalized.append(rule_dom)
+
+    if not normalized:
+        return config
+
+    routing = config.setdefault('routing', {})
+    rules = routing.setdefault('rules', [])
+    rules.insert(0, {
+        'type': 'field',
+        'domain': normalized,
+        'outboundTag': 'direct',
+    })
+    return config

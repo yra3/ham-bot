@@ -43,13 +43,21 @@ def generate_router_outbound_json(node: ProxyNode) -> Dict[str, Any]:
         }
     }
 
-def generate_client_full_json(node: ProxyNode, sub_domain: str) -> Dict[str, Any]:
-    return sanitize_and_patch_config(node.raw_config, sub_domain)
+def generate_client_full_json(
+    node: ProxyNode,
+    sub_domain: str,
+    direct_domains: List[str] = None,
+) -> Dict[str, Any]:
+    return sanitize_and_patch_config(node.raw_config, sub_domain, direct_domains=direct_domains)
 
-def generate_happ_subscription_json(nodes: List[ProxyNode], sub_domain: str) -> List[Dict[str, Any]]:
+def generate_happ_subscription_json(
+    nodes: List[ProxyNode],
+    sub_domain: str,
+    direct_domains: List[str] = None,
+) -> List[Dict[str, Any]]:
     configs = []
     for node in nodes:
-        configs.append(sanitize_and_patch_config(node.raw_config, sub_domain))
+        configs.append(sanitize_and_patch_config(node.raw_config, sub_domain, direct_domains=direct_domains))
     return configs
 
 def generate_sidecar_xray_config(nodes: List[ProxyNode], socks_port: int = 10808) -> Dict[str, Any]:
