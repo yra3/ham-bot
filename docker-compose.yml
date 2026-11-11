@@ -1,0 +1,14 @@
+services:
+  ham-bot:
+    build: .
+    container_name: ham-bot
+    restart: unless-stopped
+    env_file:
+      - .env
+    volumes:
+      - ./src:/app/src
+      - ./assets:/app/assets
+      - ./cache:/app/cache
+      - ./data:/app/data
+    ports:
+      - '0.0.0.0:8088:8080'
