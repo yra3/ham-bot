@@ -257,11 +257,13 @@ class MatrixBotService:
             sub_cmd = args[0].lower() if args else ''
 
             if sub_cmd == 'force_refresh':
+                from src.generators.xray import sync_sidecar_xray_config
                 await self.send_message(room_id, '⏳ Принудительно запрашиваю свежую подписку с апстрима...')
                 data, _ = await fetcher.fetch(force=True)
                 nodes = parse_upstream_json(data, whitelist=settings.REGION_WHITELIST)
                 checker.alive_nodes = []
                 alive = await checker.scan_pool(nodes, quick=True)
+                await sync_sidecar_xray_config(fetcher, checker, settings.REGION_WHITELIST)
                 await self.send_message(room_id, f'✅ Подписка обновлена! Валидных нод: {len(nodes)}, подтверждено живых: {len(alive)}.')
 
             elif sub_cmd == 'check':

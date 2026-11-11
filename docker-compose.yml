@@ -12,3 +12,14 @@ services:
       - ./data:/app/data
     ports:
       - '0.0.0.0:8088:8080'
+
+  xray:
+    image: ghcr.io/xtls/xray-core:latest
+    container_name: ham-xray
+    profiles: ["proxy"]
+    restart: unless-stopped
+    command: ["run", "-c", "/etc/xray/config.json"]
+    volumes:
+      - ./data/xray:/etc/xray:ro
+    ports:
+      - '${PROXY_BIND_HOST:-127.0.0.1}:10808:10808'

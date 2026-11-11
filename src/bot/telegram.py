@@ -415,11 +415,13 @@ async def cmd_check(message: Message) -> None:
 async def cmd_force_refresh(message: Message) -> None:
     if message.from_user.id not in settings.TELEGRAM_ADMIN_USERS:
         return
+    from src.generators.xray import sync_sidecar_xray_config
     await message.answer('⏳ Обновляю подписку с апстрима...')
     data, _ = await fetcher.fetch(force=True)
     nodes = parse_upstream_json(data, whitelist=settings.REGION_WHITELIST)
     checker.alive_nodes = []
     alive = await checker.scan_pool(nodes, quick=True)
+    await sync_sidecar_xray_config(fetcher, checker, settings.REGION_WHITELIST)
     await message.answer(f'✅ Готово! Валидных нод: {len(nodes)}, живых: {len(alive)}.')
 
 
@@ -440,7 +442,19 @@ class TelegramBotService:
         dp.include_router(router)
 
         try:
-            me = await bot.get_me()
+            me = None
+            for attempt in range(1, 11):
+                try:
+                    me = await bot.get_me()
+                    break
+                except Exception as e:
+                    logger.warning(f'Telegram API connect attempt {attempt}/10 failed ({e}); retrying in 3s...')
+                    await asyncio.sleep(3)
+
+            if not me:
+                logger.error('Telegram bot could not connect to API after 10 attempts.')
+                return
+
             db.set_meta('tg_bot_username', me.username or '')
             # Keep global commands empty so strangers don't see bot commands
             await bot.set_my_commands([])

@@ -3,6 +3,9 @@ import logging
 import uvicorn
 from src.config import settings
 from src.core import db
+from src.core.checker import NodeHealthChecker
+from src.core.fetcher import SubscriptionFetcher
+from src.generators.xray import sync_sidecar_xray_config
 from src.web.app import app
 from src.bot.matrix import MatrixBotService
 from src.bot.telegram import TelegramBotService
@@ -41,6 +44,15 @@ async def run_telegram():
 async def main():
     logger.info('Initializing SQLite storage...')
     db.init_db()
+
+    fetcher = SubscriptionFetcher(
+        sub_url=settings.SUB_URL,
+        hwid=settings.HWID,
+        cache_ttl_hours=settings.CACHE_TTL_HOURS,
+    )
+    checker = NodeHealthChecker(target_alive=settings.TARGET_ALIVE_NODES)
+    await sync_sidecar_xray_config(fetcher, checker, settings.REGION_WHITELIST)
+
     logger.info('Starting ham-bot application...')
     tasks = [
         asyncio.create_task(run_web()),
