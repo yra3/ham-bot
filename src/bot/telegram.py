@@ -137,13 +137,6 @@ def _main_menu_keyboard() -> InlineKeyboardMarkup:
 
 def _os_keyboard(os_key: str, showing_alts: bool = False) -> InlineKeyboardMarkup:
     rows = []
-    if os_key == 'android':
-        rows.append([
-            InlineKeyboardButton(
-                text='📥 Скачать v2RayTun (Google Play)',
-                url='https://play.google.com/store/apps/details?id=com.v2raytun.android',
-            )
-        ])
     if not showing_alts:
         rows.append([InlineKeyboardButton(text='🔄 Альтернативные программы', callback_data=f'alt:{os_key}')])
     else:
