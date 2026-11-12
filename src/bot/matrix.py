@@ -4,6 +4,7 @@ import logging
 import io
 import json
 import os
+import re
 import urllib.parse
 import httpx
 from src.config import settings
@@ -12,6 +13,7 @@ from src.core.parser import parse_upstream_json, ProxyNode
 from src.core.checker import NodeHealthChecker, check_node
 from src.generators.uri import node_to_vless_uri, generate_qr_bytes
 from src.generators.xray import generate_router_outbound_json, generate_client_full_json
+from src.bot.content import build_matrix_welcome_html, build_matrix_apps_html
 
 logger = logging.getLogger('matrix-bot')
 
@@ -23,36 +25,6 @@ fetcher = SubscriptionFetcher(
 
 checker = NodeHealthChecker(
     target_alive=settings.TARGET_ALIVE_NODES
-)
-
-HELP_TEXT_USER = (
-    '<b>Привет! Я бот для настройки быстрого интернета.</b><br><br>'
-    '<b>Самый простой способ подключения (для телефона и компьютера):</b><br>'
-    '<b>1. Установи приложение Happ:</b><br>'
-    '• Android / iOS / Windows / macOS: скачай <b>Happ</b> (или Hiddify).<br><br>'
-    '<b>2. Скопируй ссылку на готовую подписку:</b><br>'
-    '<code>https://{domain}/s/{token}/verified-smart</code><br><br>'
-    '<b>3. Вставь ссылку в приложение:</b><br>'
-    'В приложении нажми <b>«Добавить» (+) ➔ «Добавить из ссылки»</b>, вставь её и нажми <b>«Обновить»</b>.<br>'
-    '<i>Все нужные сайты (Госуслуги, банки, маркетплейсы) будут работать напрямую, а зарубежные — через прокси!</i><br><br>'
-    '----------------------------------------<br>'
-    '<b>Дополнительные команды:</b><br>'
-    '• <code>!happ</code> — выслать ссылку на подписку Happ еще раз<br>'
-    '• <code>!vless</code> — получить прямую строчку vless для копирования<br>'
-    '• <code>!qr</code> — получить QR-код для быстрого сканирования<br>'
-    '• <code>!router</code> — файл настроек для роутера (Keenetic)<br>'
-    '• <code>!all</code> — ссылка со всеми серверами'
-)
-
-HELP_TEXT_ADMIN = (
-    '<br><br>----------------------------------------<br>'
-    '🔧 <b>Команды администратора:</b><br>'
-    '• <code>!admin force_refresh</code> — сбросить кэш и принудительно обновить ноды с апстрима<br>'
-    '• <code>!admin check</code> — запустить экспресс-тест доступности серверов<br>'
-    '• <code>!admin status</code> — посмотреть статус кэша и живых серверов<br>'
-    '• <code>!admin tg_invite</code> — создать одноразовую ссылку-приглашение в Telegram<br>'
-    '• <code>!admin tg_users</code> — список пользователей Telegram<br>'
-    '• <code>!admin tg_revoke &lt;id&gt;</code> — отозвать доступ пользователю Telegram'
 )
 
 async def get_working_node() -> ProxyNode:
@@ -71,6 +43,16 @@ async def get_working_node() -> ProxyNode:
                 checker.alive_nodes.append(node)
             return node
     return nodes[0]
+
+async def get_working_nodes_list(limit: int = 5) -> list:
+    raw_data, _ = await fetcher.fetch()
+    nodes = parse_upstream_json(raw_data, whitelist=settings.REGION_WHITELIST)
+    if not nodes:
+        return []
+    if checker.alive_nodes and await check_node(checker.alive_nodes[0]):
+        return checker.alive_nodes[:limit]
+    alive = await checker.scan_pool(nodes, quick=True)
+    return (alive or nodes)[:limit]
 
 class MatrixBotService:
     def __init__(self):
@@ -97,15 +79,9 @@ class MatrixBotService:
                 return {}
 
     async def send_message(self, room_id: str, html_body: str):
-        plain = (
-            html_body.replace('<b>', '')
-            .replace('</b>', '')
-            .replace('<code>', '')
-            .replace('</code>', '')
-            .replace('<i>', '')
-            .replace('</i>', '')
-            .replace('<br>', chr(10))
-        )
+        plain = html_body.replace('<br>', chr(10))
+        plain = re.sub(r'<a\s+href="([^"]+)"[^>]*>(.*?)</a>', r'\2 (\1)', plain)
+        plain = re.sub(r'<[^>]+>', '', plain)
         data = {
             'msgtype': 'm.text',
             'body': plain,
@@ -204,33 +180,32 @@ class MatrixBotService:
                 db.set_meta(f'matrix_dm:{sender}', room_id)
 
         if cmd in ['!help', '!start', 'помощь', 'привет', 'старт', 'help']:
-            msg = HELP_TEXT_USER.format(domain=settings.SUB_DOMAIN, token=settings.SUB_SECRET_TOKEN)
-            if is_admin:
-                msg += HELP_TEXT_ADMIN
+            smart_url = f'https://{settings.SUB_DOMAIN}/s/{settings.SUB_SECRET_TOKEN}/verified-smart'
+            msg = build_matrix_welcome_html(smart_url, is_admin=is_admin)
             await self.send_message(room_id, msg)
+
+        elif cmd == '!apps':
+            await self.send_message(room_id, build_matrix_apps_html())
 
         elif cmd == '!happ':
             smart_url = f'https://{settings.SUB_DOMAIN}/s/{settings.SUB_SECRET_TOKEN}/verified-smart'
             msg = (
-                '📱 <b>Ссылка на автоподписку для Happ / Hiddify:</b><br><br>'
+                '⭐ <b>Ссылка на автоподписку (Happ — рекомендуемое приложение):</b><br><br>'
                 f'<code>{smart_url}</code><br><br>'
                 '<b>Как использовать:</b><br>'
                 '1. Скопируй ссылку выше.<br>'
                 '2. Открой приложение <b>Happ</b>.<br>'
-                '3. Нажми <b>«+» ➔ «Добавить из ссылки»</b>, вставь её и нажми <b>«Обновить»</b>.<br>'
-                '<i>Все нужные маршруты и безопасный DNS уже внутри.</i>'
+                '3. Нажми <b>«+» ➔ «Добавить из ссылки»</b>, вставь её и нажми <b>«Обновить»</b>.'
             )
             await self.send_message(room_id, msg)
 
         elif cmd == '!vless':
-            node = await get_working_node()
-            uri = node_to_vless_uri(node)
-            msg = (
-                '🔗 <b>Прямая ссылка на проверенный сервер:</b><br>'
-                f'📍 <b>Локация:</b> {node.remarks}<br><br>'
-                f'<code>{uri}</code><br><br>'
-                '<i>Нажми на код выше, чтобы скопировать в один клик.</i>'
-            )
+            working = await get_working_nodes_list(limit=5)
+            if not working:
+                await self.send_message(room_id, '⚠️ Нет доступных серверов.')
+                return
+            lines = [f'• {n.remarks}<br><code>{node_to_vless_uri(n)}</code>' for n in working]
+            msg = '🔗 <b>Список vless ссылок:</b><br><br>' + '<br><br>'.join(lines)
             await self.send_message(room_id, msg)
 
         elif cmd == '!qr':
@@ -368,7 +343,8 @@ class MatrixBotService:
                     logger.info(f'Auto-joining room on invite: {room_id}')
                     await self.join_room(room_id)
                     await asyncio.sleep(1)
-                    await self.send_message(room_id, HELP_TEXT_USER.format(domain=settings.SUB_DOMAIN, token=settings.SUB_SECRET_TOKEN))
+                    smart_url = f'https://{settings.SUB_DOMAIN}/s/{settings.SUB_SECRET_TOKEN}/verified-smart'
+                    await self.send_message(room_id, build_matrix_welcome_html(smart_url, is_admin=False))
 
                 # 2. Handle Joined Room Messages
                 join_rooms = rooms.get('join', {})

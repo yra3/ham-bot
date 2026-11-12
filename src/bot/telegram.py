@@ -1,7 +1,7 @@
 import asyncio
 import json
 import logging
-from typing import Any, Awaitable, Callable, Dict, Optional
+from typing import Any, Awaitable, Callable, Dict, List, Optional
 
 from aiogram import BaseMiddleware, Bot, Dispatcher, F, Router
 from aiogram.client.default import DefaultBotProperties
@@ -12,11 +12,18 @@ from aiogram.types import (
     BotCommand,
     BotCommandScopeChat,
     BufferedInputFile,
+    CallbackQuery,
     ChatMemberUpdated,
+    InlineKeyboardButton,
+    InlineKeyboardMarkup,
     Message,
     TelegramObject,
 )
 
+from src.bot.content import (
+    NO_VPN_TOOLS_TEXT,
+    build_os_guide_html,
+)
 from src.config import settings
 from src.core import db
 from src.core.checker import NodeHealthChecker, check_node
@@ -74,14 +81,26 @@ async def get_working_node() -> Optional[ProxyNode]:
     return nodes[0]
 
 
+async def get_working_nodes_list(limit: int = 5) -> List[ProxyNode]:
+    raw_data, _ = await fetcher.fetch()
+    nodes = parse_upstream_json(raw_data, whitelist=settings.REGION_WHITELIST)
+    if not nodes:
+        return []
+    if checker.alive_nodes and await check_node(checker.alive_nodes[0]):
+        return checker.alive_nodes[:limit]
+    alive = await checker.scan_pool(nodes, quick=True)
+    return (alive or nodes)[:limit]
+
+
 async def set_personal_commands(bot: Bot, chat_id: int, is_admin: bool) -> None:
     cmds = [
+        BotCommand(command='start', description='Главное меню и выбор устройства'),
         BotCommand(command='happ', description='Ссылка-подписка для Happ (рекомендуется)'),
-        BotCommand(command='vless', description='Прямая ссылка vless://'),
+        BotCommand(command='tools', description='Работа без VPN (Telegram, YouTube)'),
         BotCommand(command='qr', description='QR-код для сканирования'),
+        BotCommand(command='vless', description='Список vless ссылок'),
         BotCommand(command='router', description='Файл для роутера'),
         BotCommand(command='all', description='Резервная ссылка со всеми серверами'),
-        BotCommand(command='help', description='Инструкция по подключению'),
     ]
     if is_admin:
         cmds.extend([
@@ -95,28 +114,59 @@ async def set_personal_commands(bot: Bot, chat_id: int, is_admin: bool) -> None:
         logger.debug(f'Could not set personal commands for {chat_id}: {e}')
 
 
+def _main_menu_keyboard() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [
+            InlineKeyboardButton(text='📱 Телефон (Android)', callback_data='os:android'),
+            InlineKeyboardButton(text='🍏 Телефон (iPhone)', callback_data='os:ios'),
+        ],
+        [
+            InlineKeyboardButton(text='💻 Компьютер (Windows)', callback_data='os:windows'),
+            InlineKeyboardButton(text='🍎 Компьютер (macOS)', callback_data='os:macos'),
+        ],
+        [
+            InlineKeyboardButton(text='🐧 Компьютер (Linux)', callback_data='os:linux'),
+            InlineKeyboardButton(text='🌐 Роутер', callback_data='nav:router'),
+        ],
+        [
+            InlineKeyboardButton(text='⚡ Без VPN (Telegram / YouTube)', callback_data='nav:tools'),
+        ],
+    ])
+
+
+def _os_keyboard(os_key: str, showing_alts: bool = False) -> InlineKeyboardMarkup:
+    rows = []
+    if not showing_alts:
+        rows.append([InlineKeyboardButton(text='🔄 Альтернативные программы', callback_data=f'alt:{os_key}')])
+    else:
+        rows.append([InlineKeyboardButton(text='⭐ Только Happ (основное)', callback_data=f'os:{os_key}')])
+    rows.append([
+        InlineKeyboardButton(text='⚡ Без VPN (TG / YouTube)', callback_data='nav:tools'),
+        InlineKeyboardButton(text='◀️ Выбор устройства', callback_data='nav:home'),
+    ])
+    return InlineKeyboardMarkup(inline_keyboard=rows)
+
+
+def _back_home_keyboard() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text='◀️ Выбор устройства', callback_data='nav:home')],
+    ])
+
+
 def _help_text(sub_token: str, is_admin: bool) -> str:
     smart_url = f'https://{settings.SUB_DOMAIN}/s/{sub_token}/verified-smart'
     text = (
-        '<b>Привет! Я помогу настроить быстрый и стабильный доступ в сеть.</b>\n\n'
-        '<b>Самый простой способ (для телефона и компьютера):</b>\n'
-        '<b>1. Установи приложение Happ</b> (или Hiddify).\n\n'
-        '<b>2. Скопируй свою персональную ссылку:</b>\n'
+        '<b>Привет! Я помогу настроить быстрый доступ в сеть.</b>\n\n'
+        'Выбери своё устройство кнопкой ниже — я покажу, какое приложение поставить и как его подключить.\n\n'
+        '⭐ <b>Рекомендуемое приложение — Happ</b>\n'
+        'Твоя персональная ссылка для него (уже настроена, банки и Госуслуги работают напрямую):\n'
         f'<code>{smart_url}</code>\n\n'
-        '<b>3. Вставь её в приложение:</b>\n'
-        'Нажми <b>«+» ➔ «Добавить из ссылки»</b>, вставь скопированное и нажми <b>«Обновить»</b>.\n'
-        '<i>Российские сервисы (банки, Госуслуги, маркетплейсы) будут работать напрямую.</i>\n\n'
-        '<b>Другие варианты:</b>\n'
-        '• /happ — выслать персональную ссылку ещё раз\n'
-        '• /vless — прямая строка vless для копирования\n'
-        '• /qr — QR-код для камеры\n'
-        '• /router — конфиг для роутера (Keenetic)\n'
-        '• /all — резервная ссылка со всеми серверами'
+        '<i>Для опытных: /vless — список vless ссылок, /qr — QR-код, /router — конфиг для роутера.</i>'
     )
     if is_admin:
         text += (
             '\n\n<b>Команды администратора:</b>\n'
-            '• /invite — создать одноразовую пригласительную ссылку\n'
+            '• /invite — одноразовая пригласительная ссылка\n'
             '• /users — список пользователей\n'
             '• /revoke &lt;id&gt; — отозвать доступ и подписку\n'
             '• /status — статус кэша и серверов\n'
@@ -133,6 +183,27 @@ class AccessControlMiddleware(BaseMiddleware):
         event: TelegramObject,
         data: Dict[str, Any],
     ) -> Any:
+        bot: Bot = data['bot']
+
+        if isinstance(event, CallbackQuery):
+            user = event.from_user
+            msg = event.message
+            if not user or user.is_bot or not msg:
+                return
+            uid = user.id
+            is_admin = uid in settings.TELEGRAM_ADMIN_USERS
+            chat_type = msg.chat.type
+            if chat_type == ChatType.PRIVATE:
+                if is_admin or db.is_tg_user_allowed(uid):
+                    return await handler(event, data)
+                await event.answer('Доступ только по приглашению.', show_alert=True)
+                return
+            if chat_type in (ChatType.GROUP, ChatType.SUPERGROUP):
+                if db.is_group_allowed(msg.chat.id) and (is_admin or db.is_tg_user_allowed(uid)):
+                    return await handler(event, data)
+                return
+            return
+
         if not isinstance(event, Message):
             return await handler(event, data)
 
@@ -140,7 +211,6 @@ class AccessControlMiddleware(BaseMiddleware):
         if not user or user.is_bot:
             return
 
-        bot: Bot = data['bot']
         uid = user.id
         is_admin = uid in settings.TELEGRAM_ADMIN_USERS
         chat_type = event.chat.type
@@ -222,8 +292,7 @@ async def on_chat_member(event: ChatMemberUpdated, bot: Bot) -> None:
             logger.warning(f'Failed checking admins after leave in {chat.id}: {e}')
 
 
-def _get_user_token(message: Message) -> str:
-    u = message.from_user
+def _get_user_token_from_user(u) -> str:
     return db.get_or_create_tg_user(
         user_id=u.id,
         username=u.username or '',
@@ -264,54 +333,131 @@ async def cmd_start(message: Message, command: CommandObject, bot: Bot) -> None:
             except Exception:
                 pass
     else:
-        sub_token = _get_user_token(message)
+        sub_token = _get_user_token_from_user(u)
 
     await set_personal_commands(bot, message.chat.id, is_admin)
-    await message.answer(_help_text(sub_token, is_admin))
+    await message.answer(
+        _help_text(sub_token, is_admin),
+        reply_markup=_main_menu_keyboard(),
+        disable_web_page_preview=True,
+    )
 
 
 @router.message(Command('help'))
 async def cmd_help(message: Message) -> None:
     is_admin = message.from_user.id in settings.TELEGRAM_ADMIN_USERS
-    sub_token = _get_user_token(message)
-    await message.answer(_help_text(sub_token, is_admin))
+    sub_token = _get_user_token_from_user(message.from_user)
+    await message.answer(
+        _help_text(sub_token, is_admin),
+        reply_markup=_main_menu_keyboard(),
+        disable_web_page_preview=True,
+    )
+
+
+@router.message(Command('tools'))
+async def cmd_tools(message: Message) -> None:
+    await message.answer(
+        NO_VPN_TOOLS_TEXT,
+        reply_markup=_back_home_keyboard(),
+        disable_web_page_preview=True,
+    )
+
+
+@router.callback_query(F.data.startswith('os:'))
+async def cb_os_select(callback: CallbackQuery) -> None:
+    os_key = callback.data.split(':', 1)[1]
+    sub_token = _get_user_token_from_user(callback.from_user)
+    smart_url = f'https://{settings.SUB_DOMAIN}/s/{sub_token}/verified-smart'
+    await callback.message.edit_text(
+        build_os_guide_html(os_key, smart_url, show_alts=False),
+        reply_markup=_os_keyboard(os_key, showing_alts=False),
+        disable_web_page_preview=True,
+    )
+    await callback.answer()
+
+
+@router.callback_query(F.data.startswith('alt:'))
+async def cb_os_alts(callback: CallbackQuery) -> None:
+    os_key = callback.data.split(':', 1)[1]
+    sub_token = _get_user_token_from_user(callback.from_user)
+    smart_url = f'https://{settings.SUB_DOMAIN}/s/{sub_token}/verified-smart'
+    await callback.message.edit_text(
+        build_os_guide_html(os_key, smart_url, show_alts=True),
+        reply_markup=_os_keyboard(os_key, showing_alts=True),
+        disable_web_page_preview=True,
+    )
+    await callback.answer()
+
+
+@router.callback_query(F.data == 'nav:home')
+async def cb_home(callback: CallbackQuery) -> None:
+    is_admin = callback.from_user.id in settings.TELEGRAM_ADMIN_USERS
+    sub_token = _get_user_token_from_user(callback.from_user)
+    await callback.message.edit_text(
+        _help_text(sub_token, is_admin),
+        reply_markup=_main_menu_keyboard(),
+        disable_web_page_preview=True,
+    )
+    await callback.answer()
+
+
+@router.callback_query(F.data == 'nav:tools')
+async def cb_tools(callback: CallbackQuery) -> None:
+    await callback.message.edit_text(
+        NO_VPN_TOOLS_TEXT,
+        reply_markup=_back_home_keyboard(),
+        disable_web_page_preview=True,
+    )
+    await callback.answer()
+
+
+@router.callback_query(F.data == 'nav:router')
+async def cb_router(callback: CallbackQuery) -> None:
+    await callback.answer('Готовлю файл для роутера...')
+    node = await get_working_node()
+    if not node:
+        await callback.message.answer('⚠️ Нет доступных серверов.')
+        return
+    outbound_json = generate_router_outbound_json(node)
+    json_bytes = json.dumps(outbound_json, indent=2, ensure_ascii=False).encode('utf-8')
+    doc = BufferedInputFile(json_bytes, filename='proxy-outbound.json')
+    await callback.message.answer_document(document=doc, caption=f'🌐 <b>Конфигурация для роутера:</b> {node.remarks}')
 
 
 @router.message(Command('happ'))
 async def cmd_happ(message: Message) -> None:
-    sub_token = _get_user_token(message)
+    sub_token = _get_user_token_from_user(message.from_user)
     smart_url = f'https://{settings.SUB_DOMAIN}/s/{sub_token}/verified-smart'
     await message.answer(
-        '📱 <b>Персональная ссылка-подписка для Happ / Hiddify:</b>\n\n'
+        '⭐ <b>Рекомендуемое приложение — Happ</b>\n\n'
+        'Персональная ссылка-подписка:\n'
         f'<code>{smart_url}</code>\n\n'
         '1. Скопируй ссылку выше.\n'
         '2. В приложении <b>Happ</b> нажми <b>«+» ➔ «Добавить из ссылки»</b>.\n'
-        '3. Вставь и нажми <b>«Обновить»</b>.'
+        '3. Вставь и нажми <b>«Обновить»</b>.',
+        reply_markup=_main_menu_keyboard(),
+        disable_web_page_preview=True,
     )
 
 
 @router.message(Command('all'))
 async def cmd_all(message: Message) -> None:
-    sub_token = _get_user_token(message)
+    sub_token = _get_user_token_from_user(message.from_user)
     all_url = f'https://{settings.SUB_DOMAIN}/s/{sub_token}/all-smart'
     await message.answer(
-        '🌐 <b>Резервная ссылка со всеми серверами (JSON):</b>\n\n'
+        '🌐 <b>Резервная ссылка со всеми серверами:</b>\n\n'
         f'<code>{all_url}</code>'
     )
 
 
 @router.message(Command('vless'))
 async def cmd_vless(message: Message) -> None:
-    node = await get_working_node()
-    if not node:
+    working = await get_working_nodes_list(limit=5)
+    if not working:
         await message.answer('⚠️ Нет доступных серверов.')
         return
-    uri = node_to_vless_uri(node)
-    await message.answer(
-        '🔗 <b>Прямая ссылка на проверенный сервер:</b>\n'
-        f'📍 <b>Локация:</b> {node.remarks}\n\n'
-        f'<code>{uri}</code>'
-    )
+    lines = [f'• {n.remarks}\n<code>{node_to_vless_uri(n)}</code>' for n in working]
+    await message.answer('🔗 <b>Список vless ссылок:</b>\n\n' + '\n\n'.join(lines))
 
 
 @router.message(Command('qr'))
@@ -438,7 +584,9 @@ class TelegramBotService:
             default=DefaultBotProperties(parse_mode=ParseMode.HTML),
         )
         dp = Dispatcher()
-        dp.message.middleware(AccessControlMiddleware())
+        mw = AccessControlMiddleware()
+        dp.message.middleware(mw)
+        dp.callback_query.middleware(mw)
         dp.include_router(router)
 
         try:
