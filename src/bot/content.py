@@ -92,17 +92,21 @@ ALT_APPS_BY_OS: Dict[str, str] = {
     ),
 }
 
-NO_VPN_QUICK_BLOCK = (
-    '<b>Подключить Телеграм без ВПНа</b> (📱 Android)\n'
-    f'Сначала <a href="{TG_WS_APK_URL}">установить (скачать APK)</a> ➔ жмём «старт прокси» ➔ жмём «применить в телеграм» ➔ в телеграме жмём ок\n\n'
-    '<b>Смотреть Ютуб без ВПН</b> (📱 Android)\n'
+NO_VPN_TG_BLOCK = (
+    '<b>Подключить Телеграм без ВПНа</b> 📱 Android\n'
+    f'Сначала <a href="{TG_WS_APK_URL}">установить (скачать APK)</a> ➔ жмём «старт прокси» ➔ жмём «применить в телеграм» ➔ в телеграме жмём ок'
+)
+
+NO_VPN_YT_BLOCK = (
+    '<b>Смотреть Ютуб без ВПН</b> 📱 Android\n'
     f'<a href="{BYEBYEDPI_APK_URL}">Скачать</a> ➔ включить 👍\n'
     '<i>ВПН в этот момент отключается, но Ютуб работает быстрее)</i>'
 )
 
 NO_VPN_TOOLS_TEXT = (
-    f'{NO_VPN_QUICK_BLOCK}\n\n'
-    '<b>📱 Телефон (Android) — Obtainium (дополнительно)</b>\n'
+    f'{NO_VPN_TG_BLOCK}\n\n'
+    f'{NO_VPN_YT_BLOCK}\n\n'
+    '<b>📱 Телефон Android — Obtainium (дополнительно)</b>\n'
     'Зачем: автоматически обновляет приложения, скачанные с GitHub.\n'
     f'<a href="{OBTAINIUM_APK_URL}">Скачать APK</a>'
 )
@@ -141,7 +145,7 @@ def build_matrix_welcome_html(sub_url: str, is_admin: bool = False) -> str:
     happ_list = '<br>'.join(
         build_happ_links_line(k) for k in ('android', 'ios', 'windows', 'macos', 'linux')
     )
-    no_vpn_html = NO_VPN_QUICK_BLOCK.replace('\n', '<br>')
+    tg_no_vpn_html = NO_VPN_TG_BLOCK.replace('\n', '<br>')
     text = (
         '<b>Привет! Я помогу настроить быстрый и стабильный доступ в сеть.</b><br><br>'
         '⭐ <b>Рекомендуемое приложение — Happ</b>:<br>'
@@ -152,16 +156,16 @@ def build_matrix_welcome_html(sub_url: str, is_admin: bool = False) -> str:
         f'<code>{sub_url}</code><br>'
         '3. В приложении нажми <b>«+» ➔ «Добавить из ссылки»</b>, вставь её и нажми <b>«Обновить»</b>.<br><br>'
         '----------------------------------------<br>'
+        f'{tg_no_vpn_html}<br><br>'
+        '----------------------------------------<br>'
         '<b>Дополнительно:</b><br>'
-        '• <code>!apps</code> — ссылки для скачивания других приложений (Incy, v2RayTun, v2rayN/NG, Obtainium)<br>'
+        '• <code>!apps</code> — ссылки для скачивания других приложений (Incy, v2RayTun, v2rayN/NG, Ютуб без ВПН)<br>'
         '• <code>!happ</code> — напомнить ссылку на подписку<br>'
         '• <code>!vless</code> — одна проверенная vless ссылка<br>'
         '• <code>!raw</code> — список vless ссылок<br>'
         '• <code>!qr</code> — QR-код<br>'
         '• <code>!router</code> — конфиг для роутера<br>'
-        '• <code>!all</code> — резервная подписка<br><br>'
-        '----------------------------------------<br>'
-        f'{no_vpn_html}'
+        '• <code>!all</code> — резервная подписка'
     )
     if is_admin:
         text += (
@@ -181,7 +185,10 @@ def build_matrix_apps_html() -> str:
     alts = '<br><br>'.join(
         ALT_APPS_BY_OS[k].replace('\n', '<br>') for k in ('android', 'ios', 'windows', 'macos', 'linux')
     )
+    yt_html = NO_VPN_YT_BLOCK.replace('\n', '<br>')
     return (
         '<b>Ссылки для скачивания других приложений</b> (поддерживают ту же ссылку подписки <code>!happ</code>):<br><br>'
-        f'{alts}'
+        f'{alts}<br><br>'
+        '----------------------------------------<br><br>'
+        f'{yt_html}'
     )

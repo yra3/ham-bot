@@ -21,7 +21,6 @@ from aiogram.types import (
 )
 
 from src.bot.content import (
-    NO_VPN_QUICK_BLOCK,
     NO_VPN_TOOLS_TEXT,
     build_os_guide_html,
 )
@@ -163,8 +162,7 @@ def _help_text(sub_token: str, is_admin: bool) -> str:
         '⭐ <b>Рекомендуемое приложение — Happ</b>\n'
         'Твоя персональная ссылка для него:\n'
         f'<code>{smart_url}</code>\n\n'
-        '<i>Для опытных: /vless — одна ссылка, /raw — список vless ссылок, /qr — QR-код, /router — роутер.</i>\n\n'
-        f'{NO_VPN_QUICK_BLOCK}'
+        '<i>Для опытных: /vless — одна ссылка, /raw — список vless ссылок, /qr — QR-код, /router — роутер.</i>'
     )
     if is_admin:
         text += (
