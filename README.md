@@ -2,6 +2,10 @@
 
 Network profile aggregator and endpoint distribution service.
 
+## Documentation
+
+- [Руководство по развёртыванию и настройке (RU)](docs/guides/setup.md)
+
 ## Requirements
 
 - Python 3.11+ or Docker
@@ -14,7 +18,7 @@ Network profile aggregator and endpoint distribution service.
    cp .env.example .env
    ```
 
-2. Run with Docker Compose:
+2. Fill required variables (see [docs/guides/setup.md](docs/guides/setup.md)) and run with Docker Compose:
    ```bash
    docker compose up -d --build
    ```

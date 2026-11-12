@@ -1,70 +1,100 @@
-# Deployment and Configuration Guide
+# Руководство по развёртыванию и настройке
 
-## 1. Prerequisites
+## 1. Предварительные требования
 
-- Docker & Docker Compose
-- Reverse proxy (Caddy / Nginx) pointing `SUB_DOMAIN` to host port `8088`
+- Docker и Docker Compose
+- Обратный прокси (Caddy / Nginx), направляющий домен `SUB_DOMAIN` на порт хоста `8088`
 
-## 2. Environment Configuration
+## 2. Настройка `.env`: что нужно указать обязательно, а что можно не менять
 
-Copy `.env.example` to `.env`:
+Скопируйте пример конфигурации:
 
 ```bash
 cp .env.example .env
 ```
 
-### Core Settings
+### Обязательно заполнить
 
-- `SUB_URL`: Upstream subscription endpoint URL.
-- `HWID`: Device/hardware identifier sent in `X-HWID` header.
-- `SUB_DOMAIN`: Public domain where your endpoints are served (without `https://`).
-- `SUB_SECRET_TOKEN`: Master secret token (`openssl rand -hex 16`).
-- `CACHE_TTL_HOURS`: Upstream cache lifetime in hours (default `24`).
-- `TARGET_ALIVE_NODES`: Number of verified endpoints to collect (`5` by default, `-1` to check all).
-- `REGION_WHITELIST`: JSON list of allowed region substrings, e.g. `["Финляндия", "Нидерланды"]` (empty `[]` disables filtering).
-- `DIRECT_DOMAINS`: JSON list of domains that should always be routed directly (`direct`), e.g. `["example.com", "chat.example.com"]`.
+#### А. Без этих параметров приложение не запустится (нет значений по умолчанию)
 
-## 3. Telegram Bot Setup
+- `SUB_URL` — URL апстрим-подписки.
+- `HWID` — идентификатор устройства/оборудования (передаётся в заголовке `X-HWID`).
+- `SUB_SECRET_TOKEN` — главный секретный токен для ссылок подписки (сгенерируйте через `openssl rand -hex 16`).
 
-1. Open `@BotFather` in Telegram, run `/newbot`, and save the token into `TELEGRAM_BOT_TOKEN`.
-2. Get your numeric Telegram User ID:
-   - Open `@userinfobot` in Telegram and send `/start` (or any message).
-   - Copy the numeric `Id` (e.g., `123456789`) into `TELEGRAM_ADMIN_USERS=[123456789]`.
-3. Set `ENABLE_TELEGRAM_BOT=true`.
-4. Optional contact shown once to uninvited users:
+#### Б. Нужно заменить на свои значения для реальной работы
+
+- `SUB_DOMAIN` — ваш публичный домен без `https://` (в примере стоит заглушка `sub.example.com`).
+- Переключатели платформ (по умолчанию в коде включён только Matrix):
+  - `ENABLE_MATRIX_BOT` (`true` / `false`)
+  - `ENABLE_TELEGRAM_BOT` (`true` / `false`)
+- Если включён Telegram-бот (`ENABLE_TELEGRAM_BOT=true`):
+  - `TELEGRAM_BOT_TOKEN` — токен от `@BotFather`.
+  - `TELEGRAM_ADMIN_USERS` — JSON-список числовых ID администраторов, например `[123456789]`.
+- Если включён Matrix-бот (`ENABLE_MATRIX_BOT=true`):
+  - `MATRIX_HOMESERVER` — адрес вашего Matrix-сервера, например `https://matrix.example.com`.
+  - `MATRIX_USER_ID` — Matrix ID бота, например `@ham-bot:example.com`.
+  - `MATRIX_ACCESS_TOKEN` — токен доступа бота.
+  - `MATRIX_ADMIN_USERS` — JSON-список Matrix ID администраторов, например `["@admin:example.com"]`.
+
+### Можно не трогать (уже есть значения по умолчанию)
+
+Эти параметры можно оставить как есть в `.env.example` или даже не указывать в `.env`:
+
+- `PORT` — `8080` (порт внутри контейнера; в `docker-compose.yml` проброшен наружу на `8088`).
+- `CACHE_TTL_HOURS` — `24` (время жизни кэша апстрима в часах).
+- `CHECK_SCHEDULE_CRON` — `0 1 * * *`.
+- `TARGET_ALIVE_NODES` — `5` (сколько рабочих нод отбирать; `-1` — проверять все).
+- `REGION_WHITELIST` — `["Финляндия", "Нидерланды"]` (`[]` отключает фильтрацию по регионам).
+- `DIRECT_DOMAINS` — `[]` (JSON-список доменов, которые всегда идут напрямую в обход прокси, например `["example.com", "chat.example.com"]`).
+- `ENABLE_MATRIX_BOT` — `true`.
+- `ENABLE_TELEGRAM_BOT` — `false`.
+- `TELEGRAM_PROXY_URL` — `""` (пусто; нужно только при запуске с профилем `proxy` → `socks5://xray:10808`).
+- `PROXY_BIND_HOST` — `127.0.0.1` (используется в `docker-compose.yml` для SOCKS5-порта sidecar-контейнера `xray`, по умолчанию слушает только localhost).
+- `ADMIN_CONTACT_TG` — `""` (опциональный Telegram-контакт, один раз показывается неприглашённым пользователям).
+- `ADMIN_CONTACT_MATRIX` — `""` (опциональный Matrix-контакт, один раз показывается неприглашённым пользователям).
+
+## 3. Настройка Telegram-бота
+
+1. Откройте `@BotFather` в Telegram, выполните `/newbot` и сохраните выданный токен в `TELEGRAM_BOT_TOKEN`.
+2. Узнайте свой числовой Telegram User ID:
+   - Откройте `@userinfobot` в Telegram и отправьте `/start` (или любое сообщение).
+   - Скопируйте числовое значение `Id` (например, `123456789`) в `TELEGRAM_ADMIN_USERS=[123456789]`.
+3. Установите `ENABLE_TELEGRAM_BOT=true` (и `ENABLE_MATRIX_BOT=false`, если Matrix-бот не нужен).
+4. При желании укажите контакты администратора для неприглашённых пользователей:
    - `ADMIN_CONTACT_TG=@your_username`
    - `ADMIN_CONTACT_MATRIX=@admin:example.com`
 
-### Access Control in Telegram
+### Контроль доступа в Telegram
 
-- Private chats are invite-only. Admins generate one-time invites with `/invite` (or `!admin tg_invite` in Matrix).
-- Uninvited users receive a single notice with admin contact details; subsequent messages are ignored.
-- Group chats remain active only while at least one admin from `TELEGRAM_ADMIN_USERS` is present in the group.
+- Личные чаты работают только по приглашениям. Админы генерируют одноразовые инвайты командой `/invite` (или `!admin tg_invite` в Matrix).
+- Неприглашённые пользователи получают одно уведомление с контактами админа; последующие сообщения игнорируются.
+- Групповые чаты остаются активными только пока в группе присутствует хотя бы один админ из `TELEGRAM_ADMIN_USERS`.
 
-## 4. Matrix Bot Setup
+## 4. Настройка Matrix-бота
 
-1. Create a bot user on your Matrix homeserver and obtain an `access_token`.
-2. Fill in `.env`:
+1. Создайте учётную запись бота на вашем Matrix-сервере и получите `access_token`.
+2. Заполните в `.env`:
    - `ENABLE_MATRIX_BOT=true`
    - `MATRIX_HOMESERVER=https://matrix.example.com`
    - `MATRIX_USER_ID=@ham-bot:example.com`
    - `MATRIX_ACCESS_TOKEN=...`
    - `MATRIX_ADMIN_USERS=["@admin:example.com"]`
-3. Optional profile avatar: place `assets/avatar.jpg` and restart the container.
+3. Опционально для аватара профиля: положите файл `assets/avatar.jpg` и перезапустите контейнер.
 
-## 5. Running the Service
+## 5. Запуск сервиса
 
-Standard mode:
+Обычный режим:
 
 ```bash
 docker compose up -d --build
 ```
 
-With optional local SOCKS5 sidecar (`xray` profile):
+С опциональным локальным SOCKS5-прокси (`xray` sidecar, для доступа к Telegram API в заблокированных сетях):
 
-1. Set `TELEGRAM_PROXY_URL=socks5://xray:10808` in `.env`.
-2. Keep `PROXY_BIND_HOST=127.0.0.1` (default, localhost only) or set a bridge IP if needed.
-3. Start with the `proxy` profile:
+1. Пропишите `TELEGRAM_PROXY_URL=socks5://xray:10808` в `.env`.
+2. Оставьте `PROXY_BIND_HOST=127.0.0.1` (значение по умолчанию, только localhost) или укажите IP bridge-интерфейса при необходимости.
+3. Конфиг для sidecar (`./data/xray/config.json`) сервис сгенерирует автоматически на основе рабочих нод; при первом запуске может потребоваться перезапуск контейнера `xray` после генерации конфига.
+4. Запустите с профилем `proxy`:
 
 ```bash
 docker compose --profile proxy up -d --build
