@@ -17,11 +17,11 @@ OBTAINIUM_APK_URL = (
 HAPP_LINKS: Dict[str, Dict[str, str]] = {
     'android': {
         'label': '📱 Телефон (Android)',
-        'primary_label': 'Google Play',
-        'primary_url': 'https://play.google.com/store/apps/details?id=com.happproxy',
-        'secondary_label': 'GitHub (APK)',
+        'primary_label': 'v2RayTun (Google Play)',
+        'primary_url': 'https://play.google.com/store/apps/details?id=com.v2raytun.android',
+        'secondary_label': 'Happ (GitHub APK)',
         'secondary_url': 'https://github.com/Happ-proxy/happ-android/releases/latest/download/Happ.apk',
-        'secondary_prefix': '(если не доступен в Play Store): ',
+        'secondary_prefix': '(если хотите Happ — вставить ссылку в браузер, скачать и установить файл): ',
     },
     'ios': {
         'label': '🍏 Телефон (iPhone / iPad)',
@@ -61,13 +61,13 @@ ALT_APPS_BY_OS: Dict[str, str] = {
     'android': (
         '<b>📱 Телефон (Android) — альтернативные клиенты:</b>\n'
         '• <b>Incy</b> — Скачать: <a href="https://play.google.com/store/apps/details?id=llc.itdev.incy">Google Play</a> '
-        '<b>|</b> (если не доступен в Play Store): '
+        '<b>|</b> (если не доступен в Play Store — скачать, вставив ссылку в браузер, и установить файл): '
         '<a href="https://github.com/INCY-DEV/incy-platforms/releases/latest/download/Incy.apk">GitHub (APK)</a>\n'
-        '• <b>v2RayTun</b> — Скачать: <a href="https://play.google.com/store/apps/details?id=com.v2raytun.android">Google Play</a> '
-        '<b>|</b> <a href="https://t.me/v2raytun/3">Telegram-канал</a>\n'
-        '• <b>v2rayNG</b> — Скачать: <a href="https://github.com/2dust/v2rayNG/releases/latest">GitHub (релизы)</a>\n\n'
+        '• <b>v2RayTun</b> — <a href="https://t.me/v2raytun/3">Telegram-канал (резерв)</a>\n'
+        '• <b>v2rayNG</b> — Скачать (вставить ссылку в браузер и установить файл): '
+        '<a href="https://github.com/2dust/v2rayNG/releases/latest">GitHub (релизы)</a>\n\n'
         '<i>💡 Для автообновления APK с GitHub можно поставить '
-        f'<a href="{OBTAINIUM_APK_URL}">Obtainium (скачать APK)</a>.</i>'
+        f'<a href="{OBTAINIUM_APK_URL}">Obtainium</a> (вставить ссылку в браузер, скачать и установить файл).</i>'
     ),
     'ios': (
         '<b>🍏 Телефон (iPhone / iPad) — альтернативные клиенты:</b>\n'
@@ -94,12 +94,12 @@ ALT_APPS_BY_OS: Dict[str, str] = {
 
 NO_VPN_TG_BLOCK = (
     '<b>Подключить Телеграм без ВПНа</b> 📱 Android\n'
-    f'Сначала <a href="{TG_WS_APK_URL}">установить (скачать APK)</a> ➔ жмём «старт прокси» ➔ жмём «применить в телеграм» ➔ в телеграме жмём ок'
+    f'Сначала скачать (вставив ссылку в браузер) и установить файл: <a href="{TG_WS_APK_URL}">TgWsProxy APK</a> ➔ жмём «старт прокси» ➔ жмём «применить в телеграм» ➔ в телеграме жмём ок'
 )
 
 NO_VPN_YT_BLOCK = (
     '<b>Смотреть Ютуб без ВПН</b> 📱 Android\n'
-    f'<a href="{BYEBYEDPI_APK_URL}">Скачать</a> ➔ включить 👍\n'
+    f'Скачать (вставив ссылку в браузер) и установить файл: <a href="{BYEBYEDPI_APK_URL}">ByeByeDPI APK</a> ➔ включить 👍\n'
     '<i>ВПН в этот момент отключается, но Ютуб работает быстрее)</i>'
 )
 
@@ -108,7 +108,7 @@ NO_VPN_TOOLS_TEXT = (
     f'{NO_VPN_YT_BLOCK}\n\n'
     '<b>📱 Телефон Android — Obtainium (дополнительно)</b>\n'
     'Зачем: автоматически обновляет приложения, скачанные с GitHub.\n'
-    f'<a href="{OBTAINIUM_APK_URL}">Скачать APK</a>'
+    f'Скачать (вставив ссылку в браузер) и установить файл: <a href="{OBTAINIUM_APK_URL}">Obtainium APK</a>'
 )
 
 
@@ -124,18 +124,34 @@ def build_happ_links_line(os_key: str) -> str:
 
 def build_os_guide_html(os_key: str, sub_url: str, show_alts: bool = False) -> str:
     info = HAPP_LINKS[os_key]
-    sec_pref = info.get('secondary_prefix', '')
-    text = (
-        f'<b>{info["label"]} — настройка</b>\n\n'
-        '⭐ <b>Рекомендуемое приложение: Happ</b>\n'
-        f'• Основной способ: Скачать в <a href="{info["primary_url"]}">{info["primary_label"]}</a>\n'
-        f'• Дополнительно {sec_pref}<a href="{info["secondary_url"]}">Скачать {info["secondary_label"]}</a>\n\n'
-        '<b>Как подключить (3 шага):</b>\n'
-        '1. Скачай и установи <b>Happ</b>.\n'
-        '2. Скопируй свою ссылку:\n'
-        f'<code>{sub_url}</code>\n'
-        '3. В приложении нажми <b>«+» ➔ «Добавить из ссылки»</b>, вставь её и нажми <b>«Обновить»</b>.'
-    )
+    if os_key == 'android':
+        text = (
+            f'<b>{info["label"]} — настройка</b>\n\n'
+            '⭐ <b>Рекомендуемое приложение для Google Play: v2RayTun</b> (Happ сейчас удалён из Play Store в РФ)\n'
+            f'• Основной способ: Скачать в <a href="{info["primary_url"]}">Google Play</a>\n\n'
+            '<b>Как подключить v2RayTun (3 шага):</b>\n'
+            '1. Скачай и установи <b>v2RayTun</b> из Google Play.\n'
+            '2. Скопируй свою ссылку:\n'
+            f'<code>{sub_url}</code>\n'
+            '3. В <b>v2RayTun</b> нажми <b>«+»</b> в правом верхнем углу ➔ <b>«Импорт из буфера обмена»</b>, затем выбери сервер и нажми кнопку подключения.\n\n'
+            '<b>Если нужен Happ (без Google Play):</b>\n'
+            f'• <a href="{info["secondary_url"]}">Happ APK (GitHub)</a> — нужно скачать (вставив ссылку в браузер) и установить файл.\n'
+            '• В Happ: нажми <b>«+» ➔ «Добавить из ссылки»</b>, вставь ссылку и нажми <b>«Обновить»</b>.'
+        )
+    else:
+        sec_pref = info.get('secondary_prefix', '')
+        github_hint = ' (вставить ссылку в браузер, скачать и установить файл)' if 'github.com' in info['primary_url'] else ''
+        text = (
+            f'<b>{info["label"]} — настройка</b>\n\n'
+            '⭐ <b>Рекомендуемое приложение: Happ</b>\n'
+            f'• Основной способ — Скачать: <a href="{info["primary_url"]}">{info["primary_label"]}</a>{github_hint}\n'
+            f'• Дополнительно {sec_pref}— Скачать: <a href="{info["secondary_url"]}">{info["secondary_label"]}</a>\n\n'
+            '<b>Как подключить (3 шага):</b>\n'
+            '1. Скачай и установи <b>Happ</b>.\n'
+            '2. Скопируй свою ссылку:\n'
+            f'<code>{sub_url}</code>\n'
+            '3. В приложении нажми <b>«+» ➔ «Добавить из ссылки»</b>, вставь её и нажми <b>«Обновить»</b>.'
+        )
     if show_alts:
         text += '\n\n' + ALT_APPS_BY_OS[os_key]
     return text
@@ -148,13 +164,13 @@ def build_matrix_welcome_html(sub_url: str, is_admin: bool = False) -> str:
     tg_no_vpn_html = NO_VPN_TG_BLOCK.replace('\n', '<br>')
     text = (
         '<b>Привет! Я помогу настроить быстрый и стабильный доступ в сеть.</b><br><br>'
-        '⭐ <b>Рекомендуемое приложение — Happ</b>:<br>'
+        '⭐ <b>Рекомендуемое приложение — Happ</b> (для Android через Google Play сейчас используйте <b>v2RayTun</b>):<br>'
         f'{happ_list}<br><br>'
         '<b>Как подключить за 3 шага:</b><br>'
-        '1. Скачай и установи <b>Happ</b> на телефон или компьютер по ссылке выше.<br>'
+        '1. Скачай и установи приложение по ссылке выше.<br>'
         '2. Скопируй ссылку на готовую подписку:<br>'
         f'<code>{sub_url}</code><br>'
-        '3. В приложении нажми <b>«+» ➔ «Добавить из ссылки»</b>, вставь её и нажми <b>«Обновить»</b>.<br><br>'
+        '3. В приложении нажми <b>«+»</b> ➔ <b>«Импорт из буфера обмена»</b> (в v2RayTun) или <b>«Добавить из ссылки»</b> (в Happ), вставь её и обнови.<br><br>'
         '----------------------------------------<br>'
         f'{tg_no_vpn_html}<br><br>'
         '----------------------------------------<br>'

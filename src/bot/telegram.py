@@ -137,10 +137,18 @@ def _main_menu_keyboard() -> InlineKeyboardMarkup:
 
 def _os_keyboard(os_key: str, showing_alts: bool = False) -> InlineKeyboardMarkup:
     rows = []
+    if os_key == 'android':
+        rows.append([
+            InlineKeyboardButton(
+                text='📥 Скачать v2RayTun (Google Play)',
+                url='https://play.google.com/store/apps/details?id=com.v2raytun.android',
+            )
+        ])
     if not showing_alts:
         rows.append([InlineKeyboardButton(text='🔄 Альтернативные программы', callback_data=f'alt:{os_key}')])
     else:
-        rows.append([InlineKeyboardButton(text='⭐ Только Happ (основное)', callback_data=f'os:{os_key}')])
+        btn_label = '⭐ Основная инструкция (v2RayTun / Happ)' if os_key == 'android' else '⭐ Только Happ (основное)'
+        rows.append([InlineKeyboardButton(text=btn_label, callback_data=f'os:{os_key}')])
     rows.append([
         InlineKeyboardButton(text='⚡ Без VPN (TG / YouTube)', callback_data='nav:tools'),
         InlineKeyboardButton(text='◀️ Выбор устройства', callback_data='nav:home'),
