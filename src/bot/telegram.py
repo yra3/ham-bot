@@ -21,6 +21,7 @@ from aiogram.types import (
 )
 
 from src.bot.content import (
+    NO_VPN_QUICK_BLOCK,
     NO_VPN_TOOLS_TEXT,
     build_os_guide_html,
 )
@@ -98,7 +99,8 @@ async def set_personal_commands(bot: Bot, chat_id: int, is_admin: bool) -> None:
         BotCommand(command='happ', description='Ссылка-подписка для Happ (рекомендуется)'),
         BotCommand(command='tools', description='Работа без VPN (Telegram, YouTube)'),
         BotCommand(command='qr', description='QR-код для сканирования'),
-        BotCommand(command='vless', description='Список vless ссылок'),
+        BotCommand(command='vless', description='Одна проверенная vless ссылка'),
+        BotCommand(command='raw', description='Список vless ссылок'),
         BotCommand(command='router', description='Файл для роутера'),
         BotCommand(command='all', description='Резервная ссылка со всеми серверами'),
     ]
@@ -157,11 +159,12 @@ def _help_text(sub_token: str, is_admin: bool) -> str:
     smart_url = f'https://{settings.SUB_DOMAIN}/s/{sub_token}/verified-smart'
     text = (
         '<b>Привет! Я помогу настроить быстрый доступ в сеть.</b>\n\n'
-        'Выбери своё устройство кнопкой ниже — я покажу, какое приложение поставить и как его подключить.\n\n'
+        'Выбери своё устройство кнопкой ниже — я покажу, какое приложение скачать и как его подключить.\n\n'
         '⭐ <b>Рекомендуемое приложение — Happ</b>\n'
-        'Твоя персональная ссылка для него (уже настроена, банки и Госуслуги работают напрямую):\n'
+        'Твоя персональная ссылка для него:\n'
         f'<code>{smart_url}</code>\n\n'
-        '<i>Для опытных: /vless — список vless ссылок, /qr — QR-код, /router — конфиг для роутера.</i>'
+        '<i>Для опытных: /vless — одна ссылка, /raw — список vless ссылок, /qr — QR-код, /router — роутер.</i>\n\n'
+        f'{NO_VPN_QUICK_BLOCK}'
     )
     if is_admin:
         text += (
@@ -452,6 +455,20 @@ async def cmd_all(message: Message) -> None:
 
 @router.message(Command('vless'))
 async def cmd_vless(message: Message) -> None:
+    node = await get_working_node()
+    if not node:
+        await message.answer('⚠️ Нет доступных серверов.')
+        return
+    uri = node_to_vless_uri(node)
+    await message.answer(
+        '🔗 <b>Прямая ссылка на проверенный сервер:</b>\n'
+        f'📍 <b>Локация:</b> {node.remarks}\n\n'
+        f'<code>{uri}</code>'
+    )
+
+
+@router.message(Command('raw'))
+async def cmd_raw(message: Message) -> None:
     working = await get_working_nodes_list(limit=5)
     if not working:
         await message.answer('⚠️ Нет доступных серверов.')

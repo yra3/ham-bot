@@ -1,13 +1,27 @@
 # -*- coding: utf-8 -*-
 from typing import Dict
 
+TG_WS_APK_URL = (
+    'https://github.com/Regstar2/tg-ws-proxy-android/releases/download/'
+    'v1.11.7/TgWsProxy-Android-v1.11.7-arm64-v8a.apk'
+)
+BYEBYEDPI_APK_URL = (
+    'https://github.com/romanvht/ByeByeDPI/releases/download/'
+    'v.1.8.2/ByeByeDPI-v1.8.2-universal-release.apk'
+)
+OBTAINIUM_APK_URL = (
+    'https://github.com/ImranR98/Obtainium/releases/latest/download/'
+    'app-arm64-v8a-release.apk'
+)
+
 HAPP_LINKS: Dict[str, Dict[str, str]] = {
     'android': {
         'label': '📱 Телефон (Android)',
         'primary_label': 'Google Play',
         'primary_url': 'https://play.google.com/store/apps/details?id=com.happproxy',
-        'secondary_label': 'GitHub (прямой APK)',
+        'secondary_label': 'GitHub (APK)',
         'secondary_url': 'https://github.com/Happ-proxy/happ-android/releases/latest/download/Happ.apk',
+        'secondary_prefix': '(если не доступен в Play Store): ',
     },
     'ios': {
         'label': '🍏 Телефон (iPhone / iPad)',
@@ -15,100 +29,108 @@ HAPP_LINKS: Dict[str, Dict[str, str]] = {
         'primary_url': 'https://apps.apple.com/ru/app/happ-proxy-utility/id6783623643',
         'secondary_label': 'App Store (US / Global)',
         'secondary_url': 'https://apps.apple.com/us/app/happ-proxy-utility/id6504287215',
+        'secondary_prefix': '',
     },
     'windows': {
         'label': '💻 Компьютер (Windows)',
-        'primary_label': 'GitHub (установщик .exe)',
+        'primary_label': 'Установщик (.exe)',
         'primary_url': 'https://github.com/Happ-proxy/happ-desktop/releases/latest/download/setup-Happ.x64.exe',
         'secondary_label': 'Официальный сайт',
         'secondary_url': 'https://www.happ.su/main/ru',
+        'secondary_prefix': '',
     },
     'macos': {
         'label': '🍎 Компьютер (macOS)',
-        'primary_label': 'GitHub (.dmg)',
+        'primary_label': 'Образ (.dmg)',
         'primary_url': 'https://github.com/Happ-proxy/happ-desktop/releases/latest/download/Happ.macOS.universal.dmg',
         'secondary_label': 'Официальный сайт',
         'secondary_url': 'https://www.happ.su/main/ru',
+        'secondary_prefix': '',
     },
     'linux': {
         'label': '🐧 Компьютер (Linux)',
-        'primary_label': 'GitHub (.deb)',
+        'primary_label': 'Пакет (.deb)',
         'primary_url': 'https://github.com/Happ-proxy/happ-desktop/releases/latest/download/Happ.linux.x64.deb',
         'secondary_label': 'Все сборки (GitHub)',
         'secondary_url': 'https://github.com/Happ-proxy/happ-desktop/releases/latest',
+        'secondary_prefix': '',
     },
 }
 
 ALT_APPS_BY_OS: Dict[str, str] = {
     'android': (
         '<b>📱 Телефон (Android) — альтернативные клиенты:</b>\n'
-        '• <b>Incy</b> — <a href="https://play.google.com/store/apps/details?id=llc.itdev.incy">Google Play</a> '
-        '| <a href="https://github.com/INCY-DEV/incy-platforms/releases/latest/download/Incy.apk">GitHub (APK)</a>\n'
-        '• <b>v2RayTun</b> — <a href="https://play.google.com/store/apps/details?id=com.v2raytun.android">Google Play</a> '
-        '| <a href="https://t.me/v2raytun/3">Telegram-канал</a>\n'
-        '• <b>v2rayNG</b> — <a href="https://github.com/2dust/v2rayNG/releases/latest">GitHub (релизы)</a>\n\n'
-        '<i>💡 Совет для Android: если ставите приложения через APK с GitHub, установите '
-        '<a href="https://github.com/ImranR98/Obtainium/releases/latest">Obtainium</a> — он умеет автоматически обновлять их прямо с GitHub.</i>'
+        '• <b>Incy</b> — Скачать: <a href="https://play.google.com/store/apps/details?id=llc.itdev.incy">Google Play</a> '
+        '<b>|</b> (если не доступен в Play Store): '
+        '<a href="https://github.com/INCY-DEV/incy-platforms/releases/latest/download/Incy.apk">GitHub (APK)</a>\n'
+        '• <b>v2RayTun</b> — Скачать: <a href="https://play.google.com/store/apps/details?id=com.v2raytun.android">Google Play</a> '
+        '<b>|</b> <a href="https://t.me/v2raytun/3">Telegram-канал</a>\n'
+        '• <b>v2rayNG</b> — Скачать: <a href="https://github.com/2dust/v2rayNG/releases/latest">GitHub (релизы)</a>\n\n'
+        '<i>💡 Для автообновления APK с GitHub можно поставить '
+        f'<a href="{OBTAINIUM_APK_URL}">Obtainium (скачать APK)</a>.</i>'
     ),
     'ios': (
         '<b>🍏 Телефон (iPhone / iPad) — альтернативные клиенты:</b>\n'
-        '• <b>Incy</b> — <a href="https://apps.apple.com/ru/app/incy/id6756943388">App Store</a>\n'
+        '• <b>Incy</b> — Скачать: <a href="https://apps.apple.com/ru/app/incy/id6756943388">App Store</a>\n'
         '• <b>v2RayTun</b> — <a href="https://t.me/v2raytun/3">Официальная группа (ссылки на App Store)</a>'
     ),
     'windows': (
         '<b>💻 Компьютер (Windows) — альтернативные клиенты:</b>\n'
-        '• <b>Incy</b> — <a href="https://github.com/INCY-DEV/incy-platforms/releases/latest/download/incy-windows-setup.exe">GitHub (.exe)</a>\n'
-        '• <b>v2rayN</b> — <a href="https://github.com/2dust/v2rayN/releases/latest/download/v2rayN-windows-64-SelfContained.zip">GitHub (.zip)</a>'
+        '• <b>Incy</b> — Скачать: <a href="https://github.com/INCY-DEV/incy-platforms/releases/latest/download/incy-windows-setup.exe">Установщик (.exe)</a>\n'
+        '• <b>v2rayN</b> — Скачать: <a href="https://github.com/2dust/v2rayN/releases/latest/download/v2rayN-windows-64-SelfContained.zip">Архив (.zip)</a>'
     ),
     'macos': (
         '<b>🍎 Компьютер (macOS) — альтернативные клиенты:</b>\n'
-        '• <b>Incy</b> — <a href="https://apps.apple.com/ru/app/incy/id6756943388">App Store</a> '
-        '| <a href="https://github.com/INCY-DEV/incy-platforms/releases/latest/download/incy-macos-arm64.dmg">GitHub (Apple Silicon .dmg)</a> '
-        '| <a href="https://github.com/INCY-DEV/incy-platforms/releases/latest/download/incy-macos-intel.dmg">GitHub (Intel .dmg)</a>'
+        '• <b>Incy</b> — Скачать: <a href="https://apps.apple.com/ru/app/incy/id6756943388">App Store</a> '
+        '<b>|</b> <a href="https://github.com/INCY-DEV/incy-platforms/releases/latest/download/incy-macos-arm64.dmg">Apple Silicon (.dmg)</a> '
+        '<b>|</b> <a href="https://github.com/INCY-DEV/incy-platforms/releases/latest/download/incy-macos-intel.dmg">Intel (.dmg)</a>'
     ),
     'linux': (
         '<b>🐧 Компьютер (Linux) — альтернативные клиенты:</b>\n'
-        '• <b>Incy</b> — <a href="https://github.com/INCY-DEV/incy-platforms/releases/latest/download/incy-linux-x64.deb">GitHub (.deb)</a> '
-        '| <a href="https://github.com/INCY-DEV/incy-platforms/releases/latest">Все пакеты</a>'
+        '• <b>Incy</b> — Скачать: <a href="https://github.com/INCY-DEV/incy-platforms/releases/latest/download/incy-linux-x64.deb">Пакет (.deb)</a> '
+        '<b>|</b> <a href="https://github.com/INCY-DEV/incy-platforms/releases/latest">Все пакеты</a>'
     ),
 }
 
+NO_VPN_QUICK_BLOCK = (
+    '<b>Подключить Телеграм без ВПНа</b> (📱 Android)\n'
+    f'Сначала <a href="{TG_WS_APK_URL}">установить (скачать APK)</a> ➔ жмём «старт прокси» ➔ жмём «применить в телеграм» ➔ в телеграме жмём ок\n\n'
+    '<b>Смотреть Ютуб без ВПН</b> (📱 Android)\n'
+    f'<a href="{BYEBYEDPI_APK_URL}">Скачать</a> ➔ включить 👍\n'
+    '<i>ВПН в этот момент отключается, но Ютуб работает быстрее)</i>'
+)
+
 NO_VPN_TOOLS_TEXT = (
-    '<b>⚡ Полезные приложения (работа без общего VPN):</b>\n\n'
-    '📱 <b>Телефон (Android) — TG WS Proxy</b>\n'
-    'Зачем: ускоряет и стабилизирует работу Telegram напрямую, без включения общего VPN.\n'
-    'Скачать: <a href="https://github.com/Regstar2/tg-ws-proxy-android/releases/latest">GitHub (последняя версия)</a>\n\n'
-    '📱 <b>Телефон (Android) — ByeByeDPI</b>\n'
-    'Зачем: помогает открыть YouTube, Discord и другие сервисы без зарубежного VPN (обходит замедление на устройстве).\n'
-    'Скачать: <a href="https://github.com/romanvht/ByeByeDPI/releases/latest">GitHub (последняя версия)</a>\n\n'
-    '📱 <b>Телефон (Android) — Obtainium</b>\n'
-    'Зачем: автоматически проверяет и обновляет приложения, установленные с GitHub (включая Happ, Incy, TG WS Proxy, ByeByeDPI).\n'
-    'Скачать: <a href="https://github.com/ImranR98/Obtainium/releases/latest">GitHub (последняя версия)</a>'
+    f'{NO_VPN_QUICK_BLOCK}\n\n'
+    '<b>📱 Телефон (Android) — Obtainium (дополнительно)</b>\n'
+    'Зачем: автоматически обновляет приложения, скачанные с GitHub.\n'
+    f'<a href="{OBTAINIUM_APK_URL}">Скачать APK</a>'
 )
 
 
 def build_happ_links_line(os_key: str) -> str:
     info = HAPP_LINKS[os_key]
+    sec_pref = info.get('secondary_prefix', '')
     return (
-        f'{info["label"]}: '
-        f'<a href="{info["primary_url"]}">{info["primary_label"]}</a> · '
-        f'<a href="{info["secondary_url"]}">{info["secondary_label"]}</a>'
+        f'{info["label"]} — Скачать: '
+        f'<a href="{info["primary_url"]}">{info["primary_label"]}</a> <b>|</b> '
+        f'{sec_pref}<a href="{info["secondary_url"]}">{info["secondary_label"]}</a>'
     )
 
 
 def build_os_guide_html(os_key: str, sub_url: str, show_alts: bool = False) -> str:
     info = HAPP_LINKS[os_key]
+    sec_pref = info.get('secondary_prefix', '')
     text = (
         f'<b>{info["label"]} — настройка</b>\n\n'
         '⭐ <b>Рекомендуемое приложение: Happ</b>\n'
-        f'• Основной способ: <a href="{info["primary_url"]}">{info["primary_label"]}</a>\n'
-        f'• Дополнительно: <a href="{info["secondary_url"]}">{info["secondary_label"]}</a>\n\n'
+        f'• Основной способ: Скачать в <a href="{info["primary_url"]}">{info["primary_label"]}</a>\n'
+        f'• Дополнительно {sec_pref}<a href="{info["secondary_url"]}">Скачать {info["secondary_label"]}</a>\n\n'
         '<b>Как подключить (3 шага):</b>\n'
         '1. Скачай и установи <b>Happ</b>.\n'
         '2. Скопируй свою ссылку:\n'
         f'<code>{sub_url}</code>\n'
-        '3. В приложении нажми <b>«+» ➔ «Добавить из ссылки»</b>, вставь её и нажми <b>«Обновить»</b>.\n\n'
-        '<i>Российские сайты (банки, Госуслуги, маркетплейсы) будут открываться напрямую, остальные — через сервер.</i>'
+        '3. В приложении нажми <b>«+» ➔ «Добавить из ссылки»</b>, вставь её и нажми <b>«Обновить»</b>.'
     )
     if show_alts:
         text += '\n\n' + ALT_APPS_BY_OS[os_key]
@@ -119,24 +141,27 @@ def build_matrix_welcome_html(sub_url: str, is_admin: bool = False) -> str:
     happ_list = '<br>'.join(
         build_happ_links_line(k) for k in ('android', 'ios', 'windows', 'macos', 'linux')
     )
+    no_vpn_html = NO_VPN_QUICK_BLOCK.replace('\n', '<br>')
     text = (
         '<b>Привет! Я помогу настроить быстрый и стабильный доступ в сеть.</b><br><br>'
-        '⭐ <b>Рекомендуемое приложение — Happ</b> (уже с правильными маршрутами для РФ):<br>'
+        '⭐ <b>Рекомендуемое приложение — Happ</b>:<br>'
         f'{happ_list}<br><br>'
         '<b>Как подключить за 3 шага:</b><br>'
-        '1. Установи <b>Happ</b> на телефон или компьютер по ссылке выше.<br>'
+        '1. Скачай и установи <b>Happ</b> на телефон или компьютер по ссылке выше.<br>'
         '2. Скопируй ссылку на готовую подписку:<br>'
         f'<code>{sub_url}</code><br>'
-        '3. В приложении нажми <b>«+» ➔ «Добавить из ссылки»</b>, вставь её и нажми <b>«Обновить»</b>.<br>'
-        '<i>Банки, Госуслуги и маркетплейсы работают напрямую!</i><br><br>'
+        '3. В приложении нажми <b>«+» ➔ «Добавить из ссылки»</b>, вставь её и нажми <b>«Обновить»</b>.<br><br>'
         '----------------------------------------<br>'
         '<b>Дополнительно:</b><br>'
-        '• <code>!apps</code> — альтернативные программы (Incy, v2RayTun, v2rayN/NG) и утилиты без VPN (TG WS Proxy, ByeByeDPI)<br>'
+        '• <code>!apps</code> — ссылки для скачивания других приложений (Incy, v2RayTun, v2rayN/NG, Obtainium)<br>'
         '• <code>!happ</code> — напомнить ссылку на подписку<br>'
-        '• <code>!vless</code> — список vless ссылок (для опытных)<br>'
+        '• <code>!vless</code> — одна проверенная vless ссылка<br>'
+        '• <code>!raw</code> — список vless ссылок<br>'
         '• <code>!qr</code> — QR-код<br>'
         '• <code>!router</code> — конфиг для роутера<br>'
-        '• <code>!all</code> — резервная подписка'
+        '• <code>!all</code> — резервная подписка<br><br>'
+        '----------------------------------------<br>'
+        f'{no_vpn_html}'
     )
     if is_admin:
         text += (
@@ -156,10 +181,7 @@ def build_matrix_apps_html() -> str:
     alts = '<br><br>'.join(
         ALT_APPS_BY_OS[k].replace('\n', '<br>') for k in ('android', 'ios', 'windows', 'macos', 'linux')
     )
-    tools = NO_VPN_TOOLS_TEXT.replace('\n', '<br>')
     return (
-        '<b>Альтернативные программы</b> (поддерживают ту же ссылку подписки <code>!happ</code>):<br><br>'
-        f'{alts}<br><br>'
-        '----------------------------------------<br><br>'
-        f'{tools}'
+        '<b>Ссылки для скачивания других приложений</b> (поддерживают ту же ссылку подписки <code>!happ</code>):<br><br>'
+        f'{alts}'
     )

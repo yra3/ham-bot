@@ -200,6 +200,19 @@ class MatrixBotService:
             await self.send_message(room_id, msg)
 
         elif cmd == '!vless':
+            node = await get_working_node()
+            if not node:
+                await self.send_message(room_id, '⚠️ Нет доступных серверов.')
+                return
+            uri = node_to_vless_uri(node)
+            msg = (
+                '🔗 <b>Прямая ссылка на проверенный сервер:</b><br>'
+                f'📍 <b>Локация:</b> {node.remarks}<br><br>'
+                f'<code>{uri}</code>'
+            )
+            await self.send_message(room_id, msg)
+
+        elif cmd == '!raw':
             working = await get_working_nodes_list(limit=5)
             if not working:
                 await self.send_message(room_id, '⚠️ Нет доступных серверов.')
