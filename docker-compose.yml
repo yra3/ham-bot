@@ -11,7 +11,7 @@ services:
       - ./cache:/app/cache
       - ./data:/app/data
     ports:
-      - '0.0.0.0:8088:8080'
+      - '0.0.0.0:${HOST_PORT:-8088}:${PORT:-8080}'
 
   xray:
     image: ghcr.io/xtls/xray-core:latest

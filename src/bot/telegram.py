@@ -156,7 +156,7 @@ def _back_home_keyboard() -> InlineKeyboardMarkup:
 
 
 def _help_text(sub_token: str, is_admin: bool) -> str:
-    smart_url = f'https://{settings.SUB_DOMAIN}/s/{sub_token}/verified-smart'
+    smart_url = settings.build_sub_url(sub_token, 'verified-smart')
     text = (
         '<b>Привет! Я помогу настроить быстрый доступ в сеть.</b>\n\n'
         'Выбери своё устройство кнопкой ниже — я покажу, какое приложение скачать и как его подключить.\n\n'
@@ -369,7 +369,7 @@ async def cmd_tools(message: Message) -> None:
 async def cb_os_select(callback: CallbackQuery) -> None:
     os_key = callback.data.split(':', 1)[1]
     sub_token = _get_user_token_from_user(callback.from_user)
-    smart_url = f'https://{settings.SUB_DOMAIN}/s/{sub_token}/verified-smart'
+    smart_url = settings.build_sub_url(sub_token, 'verified-smart')
     await callback.message.edit_text(
         build_os_guide_html(os_key, smart_url, show_alts=False),
         reply_markup=_os_keyboard(os_key, showing_alts=False),
@@ -382,7 +382,7 @@ async def cb_os_select(callback: CallbackQuery) -> None:
 async def cb_os_alts(callback: CallbackQuery) -> None:
     os_key = callback.data.split(':', 1)[1]
     sub_token = _get_user_token_from_user(callback.from_user)
-    smart_url = f'https://{settings.SUB_DOMAIN}/s/{sub_token}/verified-smart'
+    smart_url = settings.build_sub_url(sub_token, 'verified-smart')
     await callback.message.edit_text(
         build_os_guide_html(os_key, smart_url, show_alts=True),
         reply_markup=_os_keyboard(os_key, showing_alts=True),
@@ -429,7 +429,7 @@ async def cb_router(callback: CallbackQuery) -> None:
 @router.message(Command('happ'))
 async def cmd_happ(message: Message) -> None:
     sub_token = _get_user_token_from_user(message.from_user)
-    smart_url = f'https://{settings.SUB_DOMAIN}/s/{sub_token}/verified-smart'
+    smart_url = settings.build_sub_url(sub_token, 'verified-smart')
     await message.answer(
         '⭐ <b>Рекомендуемое приложение — Happ</b>\n\n'
         'Персональная ссылка-подписка:\n'
@@ -445,7 +445,7 @@ async def cmd_happ(message: Message) -> None:
 @router.message(Command('all'))
 async def cmd_all(message: Message) -> None:
     sub_token = _get_user_token_from_user(message.from_user)
-    all_url = f'https://{settings.SUB_DOMAIN}/s/{sub_token}/all-smart'
+    all_url = settings.build_sub_url(sub_token, 'all-smart')
     await message.answer(
         '🌐 <b>Резервная ссылка со всеми серверами:</b>\n\n'
         f'<code>{all_url}</code>'

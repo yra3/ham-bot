@@ -180,7 +180,7 @@ class MatrixBotService:
                 db.set_meta(f'matrix_dm:{sender}', room_id)
 
         if cmd in ['!help', '!start', 'помощь', 'привет', 'старт', 'help']:
-            smart_url = f'https://{settings.SUB_DOMAIN}/s/{settings.SUB_SECRET_TOKEN}/verified-smart'
+            smart_url = settings.build_sub_url(settings.SUB_SECRET_TOKEN, 'verified-smart')
             msg = build_matrix_welcome_html(smart_url, is_admin=is_admin)
             await self.send_message(room_id, msg)
 
@@ -188,7 +188,7 @@ class MatrixBotService:
             await self.send_message(room_id, build_matrix_apps_html())
 
         elif cmd == '!happ':
-            smart_url = f'https://{settings.SUB_DOMAIN}/s/{settings.SUB_SECRET_TOKEN}/verified-smart'
+            smart_url = settings.build_sub_url(settings.SUB_SECRET_TOKEN, 'verified-smart')
             msg = (
                 '⭐ <b>Ссылка на автоподписку (Happ — рекомендуемое приложение):</b><br><br>'
                 f'<code>{smart_url}</code><br><br>'
@@ -236,7 +236,7 @@ class MatrixBotService:
             await self.send_file(room_id, 'proxy-outbound.json', json_bytes, 'application/json')
 
         elif cmd == '!all':
-            all_url = f'https://{settings.SUB_DOMAIN}/s/{settings.SUB_SECRET_TOKEN}/all-smart'
+            all_url = settings.build_sub_url(settings.SUB_SECRET_TOKEN, 'all-smart')
             msg = f'🌐 <b>Ссылка со всеми резервными серверами (JSON):</b><br><br><code>{all_url}</code>'
             await self.send_message(room_id, msg)
 
@@ -356,7 +356,7 @@ class MatrixBotService:
                     logger.info(f'Auto-joining room on invite: {room_id}')
                     await self.join_room(room_id)
                     await asyncio.sleep(1)
-                    smart_url = f'https://{settings.SUB_DOMAIN}/s/{settings.SUB_SECRET_TOKEN}/verified-smart'
+                    smart_url = settings.build_sub_url(settings.SUB_SECRET_TOKEN, 'verified-smart')
                     await self.send_message(room_id, build_matrix_welcome_html(smart_url, is_admin=False))
 
                 # 2. Handle Joined Room Messages
